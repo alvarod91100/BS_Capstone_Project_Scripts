@@ -1,3 +1,3 @@
 # BS_Capstone_Project_Scripts
-Repository includes the scripts used for the development of project.
-Other files used for web development, data security, documentation, and the LaTEX project report won't be stored here.
+Repository only includes the scripts used for the development of project.
+Such scripts present were used for the creation of the databases, execution of backups, simulation of synthetic data, etc.
