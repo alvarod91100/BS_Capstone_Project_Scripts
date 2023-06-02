@@ -9,6 +9,21 @@ from sqlalchemy import text
 
 # GENERACIÓN DE CLIENTES
 def generate_client_data(num_rows: int, engine, nombres_hombres, nombres_mujeres, apellidos, ciudades, estados, codigos_postales, preguntas_seguridad, respuestas_de_seguridad):
+    """ Funcion para generar datos de clientes simulados y ejecutar su inserción en la base de datos.
+
+    Args:
+        num_rows (int): _description_
+        engine: objeto sqlalchemy engine conectado a la base de datos
+        nombres_hombres (list): lista de strings de nombres de hombres para su selección aleatoria
+        nombres_mujeres (list): lista de strings de nombres de mujeres para su selección aleatoria
+        apellidos (list): lista de strings de apellidos para su selección aleatoria
+        ciudades (list): lista de strings de ciudades para su selección aleatoria
+        estados (list): lista de strings de estados para su selección aleatoria
+        codigos_postales (list): lista de strings de códigos postales para su selección aleatoria
+        preguntas_seguridad (list): lista de strings de preguntas de seguridad para su selección aleatoria
+        respuestas_de_seguridad (list): lista de strings de respuestas de seguridad para su selección aleatoria
+    """
+    
     data = []
     for i in range(num_rows):
         nombre = random.choice(nombres_mujeres+nombres_hombres)
@@ -38,6 +53,26 @@ def generate_client_data(num_rows: int, engine, nombres_hombres, nombres_mujeres
         
 # GENERACIÓN DE VITALES
 def generar_vitales(normal_med_dict:dict, diabetes_med_dict:dict, hypertension_med_dict:dict,cantidad_lecturas: int , data_clientes: pd.DataFrame, data_padecimientos:pd.DataFrame, dict_padecimientos:dict,sqlalchemy_engine, vitales_current_ids_list= None, fecha_inicial_lecturas= '01/04/2023', days_delta_max= 90, client_list= None, ids_sucursales = [1,2,3], noise_factor_height= 0.0001, noise_factor_weight= 0.02):
+    """ Funcion para simular lecturas de medidas fisiologicas y ejecutar su inserción en la base de datos.
+    
+    Args:
+        normal_med_dict (dict): diccionario conteniendo las medias y desviaciones estandar de cada medicion que se simular a para las personas sin diabetes ni hipertension.
+        diabetes_med_dict (dict): diccionario conteniendo las medias y desviaciones estandar de cada medicion que se simular a para las personas con diabetes tipo 2.
+        hypertension_med_dict (dict): diccionario conteniendo las medias y desviaciones estandar de cada medicion que se simular a para las personas con hipertension.
+        cantidad_lecturas (int): cantidad de lecturas que se generaran por cliente.
+        data_clientes (pd.DataFrame): DataFrame que contiene todo id cliente en la base de datos actualmente y su g enero respectivo. Se debe obtener mediante una consulta de la tabla clientes utilizando SQL.
+        data_padecimientos (pd.DataFrame): DataFrame que contiene todo id_cliente en la base de datos actualmente y sus id_padecimiento actuales respectivos. Se debe obtener mediante una consulta de la tabla padecimientos_cliente utilizando SQL.
+        dict_padecimientos (dict): diccionario que contiene la signación de nombres de los padecimientos para cada id_padecimiento en data_padecimientos.
+        sqlalchemy_engine: objeto sqlalchemy engine conectado a la base de datos
+        vitales_current_ids_list (list, optional): lista de los id_lectura actualmente en la tabla. Predeterminado: None.
+        fecha_inicial_lecturas (str, optional):fecha minima que puede aparecer en las las lecturas simuladas. Predeterminado: '01/04/2023'.
+        days_delta_max (int, optional): diferencia de dias maxima que pueden tener las fechas simuladas respecto a fecha_inicial_lecturas. Predeterminado: 90.
+        client_list (list, optional): lista de los id_cliente de los cuales se quiere generar las simulaciones. Predeterminado: None.
+        ids_sucursales (list, optional): lista de los id_local que se quiere que puedan aparecer en las simulaciones de las lecturas. Predeterminado: [1,2,3].
+        noise_factor_height (float, optional): variables para determinar la magnitud de los cambios que cada paciente puede presentar entre visitas para la variable de altura. Predeterminado: 0.0001.
+        noise_factor_weight (float, optional): variables para determinar la magnitud de los cambios que cada paciente puede presentar entre visitas para la variable de peso. Defaults to 0.02.
+        """
+    
     lista_peso_df= []
     lista_altura_df= []
     lista_bmi_df=[]
@@ -159,14 +194,25 @@ def generar_vitales(normal_med_dict:dict, diabetes_med_dict:dict, hypertension_m
 
 # GENERACION DE PADECIMIENTOS DE CLIENTES
 def generar_padecimientos(lista_clientes: list, diseases_dict: dict, average_diseases: float, std_dev_diseases: float, diabetes_prob: float, hypertension_prob: float, engine):
-    # Define the parameters
+    """ Funcion que genera padecimientos para cada cliente de la lista de clientes y los inserta en la tabla padecimientos.
+    
+    Args:
+        lista_clientes (list): listado de los identificadores de clientes a los cuales se les desea simular la presencia de padecimientos. Se pretende que esta lista tenga los identificadores de los clientes que no tengan presencia alguna en la tabla padecimientos_cliente, para evitar filas duplicados en ella.
+        diseases_dict (dict): diccionario originado de la extracción de todas las filas presentes en la tabla padecimientos_clientes antes de la ejecución de la función. Esto es para considerar qué padecimientos ya tiene cada cliente.
+        average_diseases (float): valor que representa a la media de cantidad de padecimientos que se generarán a cada cliente.
+        std_dev_diseases (float): valor que representa a la desviación estándar de cantidad de padecimientos que se generarán a cada cliente.
+        diabetes_prob (float): probabilidad de que un paciente tenga diabetes tipo 2.
+        hypertension_prob (float): probabilidad de que un paciente tenga hipertensión.
+        engine: motor de conexión hacia la base de datos para ejecutar consultas de SQL.
+    """
+    
     clientes= lista_clientes
     start_id = np.min(clientes)
     diseases = list(diseases_dict.values())
     disease_avg = average_diseases  # Average number of diseases per client
     disease_std_dev = std_dev_diseases  # Standard deviation of the number of diseases per client
 
-    # Generate the data
+    # Generacion
     client_data = []
     for client_id in clientes:
         client_diseases_d_or_h=[]
@@ -190,7 +236,7 @@ def generar_padecimientos(lista_clientes: list, diseases_dict: dict, average_dis
         #agregar prevalencia de diabetes e hipertension
         # hacer que, por ahora, sean excluyentes
 
-    # Generate the SQL query
+    # Query SQL 
     query = "INSERT INTO proyecto_salud.padecimientos_cliente (id_cliente, id_padecimiento) VALUES\n"
     values = []
     for client_id, client_diseases in client_data:
